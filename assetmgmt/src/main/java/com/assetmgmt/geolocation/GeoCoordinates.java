@@ -42,10 +42,16 @@ public class GeoCoordinates
 		String[] address = shopAddress.getAddress().split(" ");
 		try 
 		{
-			String completeUrl = "https://maps.googleapis.com/maps/api/geocode/json?address=" + address[0] + "+"
-					+ address[1] + "+" + address[2] + ",+" + address[3] + "+" + address[4] + ",+"
-					+ shopAddress.getState() + key;
-			conn = restClient.getRestConnection(completeUrl);
+			StringBuilder completeUrl = new StringBuilder("https://maps.googleapis.com/maps/api/geocode/json?address=");
+			
+			for(int i=0;i<address.length;i++)
+			{
+				completeUrl.append(address[i]);
+				completeUrl.append("+");
+			}	
+			completeUrl.append(shopAddress.getState());
+			completeUrl.append(key);
+			conn = restClient.getRestConnection(completeUrl.toString());
 
 			if (conn.getResponseCode() != 200) 
 			{
