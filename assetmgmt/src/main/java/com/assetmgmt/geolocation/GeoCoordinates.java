@@ -1,20 +1,18 @@
 package com.assetmgmt.geolocation;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import com.assetmgmt.bean.ShopAddress;
-import com.assetmgmt.client.RestClient;
+import com.assetmgmt.exception.AssetMgmtException;
+import com.assetmgmt.rest.ShopController;
+import com.google.maps.GeoApiContext;
+import com.google.maps.GeocodingApi;
+import com.google.maps.errors.ApiException;
+import com.google.maps.model.GeocodingResult;
 
 /**
  * @author rchugh
@@ -22,81 +20,41 @@ import com.assetmgmt.client.RestClient;
 @Service
 public class GeoCoordinates
 {
-	@Autowired
-	private RestClient restClient;
 	
-	private final String key= "&key=AIzaSyBbGu6FA3MfUidBBoJBE2_j8uquQlV-Bjw";
+	@Value("${google.maps.apiKey}")
+	private String apiKey;
 	
-	private HttpURLConnection conn = null;
-	
+	private Logger logger = LoggerFactory.getLogger(GeoCoordinates.class);
+
 	/**
      * Gets longitude and latitude from google api based on provided address and updates the longitude and latitude defined on ShopAddress for a particular shop
      *
      * @param shopAddress
      */
-	public void getCoordinates(ShopAddress shopAddress) {
-
-		StringBuilder sb = new StringBuilder();
-		String output;
-		JSONObject jObject;
-		String[] address = shopAddress.getAddress().split(" ");
-		try 
-		{
-			StringBuilder completeUrl = new StringBuilder("https://maps.googleapis.com/maps/api/geocode/json?address=");
-			
-			for(int i=0;i<address.length;i++)
-			{
-				completeUrl.append(address[i]);
-				completeUrl.append("+");
-			}	
-			completeUrl.append(shopAddress.getState());
-			completeUrl.append(key);
-			conn = restClient.getRestConnection(completeUrl.toString());
-
-			if (conn.getResponseCode() != 200) 
-			{
-				throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
-			}
-
-			BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+	public void getCoordinates(ShopAddress shopAddress) 
+	{
+		logger.trace("Start getCoordinates()");
 		
-			while ((output = br.readLine()) != null) 
-			{
-				sb.append(output);
-			}
-			try 
-			{
-				jObject = new JSONObject(sb.toString());
-				JSONArray resultArr = jObject.getJSONArray("results");
-				JSONObject addressComponent = resultArr.getJSONObject(0);
+		GeoApiContext context = new GeoApiContext().setApiKey(apiKey);
+		
+		String address = shopAddress.getAddress()+", "+shopAddress.getState()+" "+shopAddress.getZipCode();
 
-				JSONObject geometry = addressComponent.getJSONObject("geometry");
-				JSONObject location = geometry.getJSONObject("location");
-
-				Double latitude = location.getDouble("lat");
-				Double longitude = location.getDouble("lng");
-
-				if (latitude != null && longitude != null) 
-				{
-					shopAddress.setLatitude(latitude);
-					shopAddress.setLongitude(longitude);
-				}
-
-			} 
-			catch (JSONException e) 
-			{
-				e.printStackTrace();
-			}
-		}
-		catch (IOException ie) 
+		logger.info("getCoordinates():: fetching coordinates for address:"+address);	
+		try  
 		{
-			ie.printStackTrace();
-
+			GeocodingResult results[] = GeocodingApi.geocode(context, address).await();
+			for (GeocodingResult result : results) 
+			{
+				shopAddress.setLatitude(result.geometry.location.lat);
+				shopAddress.setLongitude(result.geometry.location.lng);
+				logger.info("getCoordinates():: Latitude:"+shopAddress.getLatitude()+"Longitude:"+shopAddress.getLongitude());	
+			}
 		} 
-		finally 
+		catch (ApiException | InterruptedException | IOException e) 
 		{
-			conn.disconnect();
+			throw new AssetMgmtException("Error occured while fetching cordinates::"+e.getMessage());
 		}
+		logger.trace("Exit getCoordinates()");	
 	}
 	
 }

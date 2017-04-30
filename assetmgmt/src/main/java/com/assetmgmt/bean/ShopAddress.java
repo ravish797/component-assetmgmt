@@ -1,13 +1,19 @@
 package com.assetmgmt.bean;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * @author rchugh
  */
 @XmlRootElement
+@Entity
 public class ShopAddress
 {
+	@Id
+	private String shopName;
+	
 	private int number;
 	
 	private int zipCode;
@@ -34,7 +40,7 @@ public class ShopAddress
 		this.state = state;
 	}
 	
-	public ShopAddress(int number, int zipCode, String address, String state, double latitude, double longitude)
+	public ShopAddress(int number, String address, String state,int zipCode,double latitude, double longitude)
 	{
 		super();
 		this.number = number;
@@ -104,5 +110,15 @@ public class ShopAddress
 	public void setLongitude(double longitude) 
 	{
 		this.longitude = longitude;
+	}
+
+	public String getShopName() {
+		return shopName;
+	}
+
+	public void setShopName(String shopName) {
+		this.shopName = shopName;
 	}	
+	
+	
 }

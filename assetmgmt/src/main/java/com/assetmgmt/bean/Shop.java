@@ -1,15 +1,22 @@
 package com.assetmgmt.bean;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * @author rchugh
  */
 @XmlRootElement
+@Entity
 public class Shop 
 {
+	@Id
 	private String shopName;
 	
+	@OneToOne(cascade = CascadeType.ALL)
 	private ShopAddress shopAddress;
 	
 	public Shop()

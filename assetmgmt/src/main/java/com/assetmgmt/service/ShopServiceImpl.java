@@ -1,18 +1,21 @@
 package com.assetmgmt.service;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-import javax.management.RuntimeErrorException;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import com.assetmgmt.bean.Shop;
 import com.assetmgmt.bean.ShopAddress;
+import com.assetmgmt.constants.MessageConstants;
+import com.assetmgmt.exception.AssetMgmtException;
 import com.assetmgmt.geolocation.GeoCoordinates;
+import com.assetmgmt.repository.ShopRepository;
+import com.assetmgmt.rest.ShopController;
+import com.assetmgmt.restresponse.RestApiResponse;
 
 /**
  * @author rchugh
@@ -23,14 +26,14 @@ public class ShopServiceImpl implements ShopService
 	@Autowired
 	private GeoCoordinates geoCoordinates;
 	
-	private static List<Shop> shopList = new ArrayList<Shop>();
-	static
-	{
-		shopList =new ArrayList<>(Arrays.asList(new Shop("Store_CA",new ShopAddress(100,"1600 Amphitheatre Pkwy Mountain View", "CA",90001)),
-									new Shop("Store_GA",new ShopAddress(101,"2300 Windy Ridge Pkwy SE", "GA",30339))));	
-	}
+	@Autowired
+	private ShopRepository shopRepository;
 	
-
+	@Autowired
+	private RestApiResponse response;
+	
+	private Logger logger = LoggerFactory.getLogger(ShopController.class);
+	
 	/**
      * Returns list of all the shops in the memory
      *
@@ -38,22 +41,36 @@ public class ShopServiceImpl implements ShopService
      */
 	public List<Shop> getShops()
 	{
-		return shopList;
+		return shopRepository.findAll();
 	}
-	
 
 	/**
      * Returns a particular shop after comparing the shop name;
      *
      * @param shopName
-     * @return List<Shop> 
+     * @return RestApiResponse 
      */
-	public Shop getShop(String shopName)
+	public RestApiResponse getShop(String shopName)
 	{
-		Shop shopObj= shopList.stream().filter(shop-> 
-		shop.getShopName().equals(shopName)).findFirst().orElse(null);
-
-		return shopObj;
+		logger.trace("Start getShop()");
+		if(shopName==null)
+		{
+			throw new AssetMgmtException("Shop name is invalid");
+		}
+		response.clear();
+		Shop shop=shopRepository.findOne(shopName);
+		if(shop!=null)
+		{
+			response.setData(shop);
+			response.setMessage(MessageConstants.SHOPFOUND);
+		}
+		else
+		{
+			response.setMessage(MessageConstants.NOSHOPFOUND);
+		}
+		logger.info("getShop()::Shop data "+response.getData());
+		logger.trace("Exit getShop()");
+		return response;
 	}
 	
 	/**
@@ -61,22 +78,47 @@ public class ShopServiceImpl implements ShopService
      * Also update the longitude and latitude present in shop address by calling google API and fetching them based on address field present in ShopAdress
      *
      * @param shop
-     * @return Shop
+     * @return RestApiResponse
      */
-	public Shop addShop(Shop shop)
+	public RestApiResponse addShop(Shop shop)
 	{
+		logger.trace("Start addShop()");
 		
-		Optional<Shop> shopExist =	shopList.stream().filter(shopObj-> shopObj.getShopName().equals(shop.getShopName())).findAny();
-		
-		if(shopExist.isPresent())
+		if(shop.getShopName()==null)
 		{
-			shopList.remove(shopExist.get());
+			throw new AssetMgmtException("Shop name cannot be empty");
 		}
-		shopList.add(shop);
-		
+
+		boolean check=false;
+		List<Shop> shopList=shopRepository.findAll();
+		if(!CollectionUtils.isEmpty(shopList))
+		{
+			Optional<Shop> shopExist =	shopList.stream().filter(shopObj-> shopObj.getShopName().equals(shop.getShopName())).findAny();
+			
+			if(shopExist.isPresent())
+			{
+				shopList.remove(shopExist.get());
+				check=true;
+			}	
+		}
+		shop.getShopAddress().setShopName(shop.getShopName());
 		geoCoordinates.getCoordinates(shop.getShopAddress());
+		shopRepository.save(shop);
+		response.setData(shop);
+		
+		if(check)
+		{
+			response.setMessage(MessageConstants.SHOPREPLACED);	
+			logger.info("addShop()::"+MessageConstants.SHOPREPLACED);		
+		}
+		else
+		{
+			response.setMessage(MessageConstants.SHOPADEDD);
+			logger.info("addShop()::"+MessageConstants.SHOPADEDD);		
+		}
 	
-		return shop;
+		logger.trace("Exit addShop()");
+		return response;
 	}
 	
 	/**
@@ -84,14 +126,20 @@ public class ShopServiceImpl implements ShopService
      *
      * @param longitude
      * @param latitude
-     * @return ShopAddress 
+     * @return RestApiResponse 
      */
-	public ShopAddress getNearestShop(double longitude,double latitude)
+	public RestApiResponse getNearestShop(double longitude,double latitude)
 	{
+		logger.trace("Start getNearestShop()");
+		
+		logger.debug("getNearestShop():: longitude: "+longitude+"latitude: "+latitude);
 		ShopAddress closestStore = null;
 		double distance=0;
 		double temp=0;
 		int count=0;
+		response.clear();
+		List<Shop> shopList=shopRepository.findAll();
+		shopList = shopList.stream().filter(shop-> (shop.getShopAddress().getLongitude()!=0 && shop.getShopAddress().getLongitude()!=0)).collect(Collectors.toList());
 		if(!CollectionUtils.isEmpty(shopList))
 		{
 			for(Shop shop:shopList)
@@ -102,7 +150,7 @@ public class ShopServiceImpl implements ShopService
 				{
 					distance = temp;
 					closestStore=shop.getShopAddress();
-					count=1;;
+					count=1;
 				}
 				if (temp < distance) 
 				{
@@ -110,8 +158,17 @@ public class ShopServiceImpl implements ShopService
 					closestStore = shop.getShopAddress();
 				}		
 			}	
+		response.setData(closestStore);
+		response.setMessage(MessageConstants.NEARESTLOCATION);
+		logger.info("getNearestShop()::"+MessageConstants.NEARESTLOCATION);
 		}
-		return closestStore;
+		else
+		{
+			response.setMessage(MessageConstants.NOSHOPFOUND);
+			logger.info("getNearestShop()::"+MessageConstants.NOSHOPFOUND);
+		}
+		logger.trace("Exit getNearestShop()");
+		return response;
 	}
 	
 	/**
@@ -125,6 +182,8 @@ public class ShopServiceImpl implements ShopService
      */
 	public double calculateDistance(double lon1,double lon2, double lat1,double lat2)
 	{
+		logger.trace("Start calculateDistance()");
+		
 		final int R = 6371; // Radius of the earth
 
 		double latDistance = Math.toRadians(lat2 - lat1);
@@ -134,6 +193,8 @@ public class ShopServiceImpl implements ShopService
 		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 		double distance = R * c * 1000; // convert to meters
 		distance = Math.pow(distance, 2);
+		
+		logger.trace("Exit calculateDistance()");
 
 		return Math.sqrt(distance);
 	}

@@ -1,7 +1,6 @@
 package com.assetmgmt.rest;
 
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.assetmgmt.bean.Shop;
-import com.assetmgmt.bean.ShopAddress;
+import com.assetmgmt.restresponse.RestApiResponse;
 import com.assetmgmt.service.ShopService;
 
 /**
@@ -32,7 +31,7 @@ public class ShopController
      */
 	@RequestMapping(value="/shop",method=RequestMethod.POST,consumes=MediaType.APPLICATION_JSON_VALUE,
 			produces=MediaType.APPLICATION_JSON_VALUE)
-	public Shop addShop(@RequestBody Shop shop)
+	public RestApiResponse addShop(@RequestBody Shop shop)
 	{
 		return shopService.addShop(shop);
 	}
@@ -55,7 +54,7 @@ public class ShopController
      * @return Shop
      */
 	@RequestMapping(value="/shop/{shopName}",method=RequestMethod.GET,produces=MediaType.APPLICATION_JSON_VALUE)
-	public Shop getByShopId(@PathVariable String shopName)
+	public RestApiResponse getByShopId(@PathVariable String shopName)
 	{
 		return shopService.getShop(shopName);
 	}
@@ -68,7 +67,7 @@ public class ShopController
      * @return ShopAddress
      */
 	@RequestMapping(value="/shopAddress/longitude/{longitude}/latitude/{latitude}",method=RequestMethod.GET,produces=MediaType.APPLICATION_JSON_VALUE)
-	public ShopAddress getNearestShop(@PathVariable String longitude,@PathVariable String latitude)
+	public RestApiResponse getNearestShop(@PathVariable String longitude,@PathVariable String latitude)
 	{
 		return shopService.getNearestShop(Double.parseDouble(longitude), Double.parseDouble(latitude));
 	}

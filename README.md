@@ -9,25 +9,27 @@ Desc This api returns all the shop in from the memory
 Response
 [
   {
-    "shopName": "Store_GA",
+    "shopName": "Store_GA1",
     "shopAddress": {
+      "shopName": "Store_GA1",
       "number": 101,
-      "zipCode": 30339,
-      "address": "2300 Windy Ridge Pkwy SE",
+      "zipCode": 90001,
+      "address": "1600 Amphitheatre Pkwy Mountain View",
       "state": "GA",
-      "latitude": 0,
-      "longitude": 0
+      "latitude": 37.4223895,
+      "longitude": -122.0843123
     }
   },
   {
-    "shopName": "Store_CA",
+    "shopName": "Store_GA2",
     "shopAddress": {
-      "number": 200,
-      "zipCode": 90001,
-      "address": "1600 Amphitheatre Pkwy Mountain View",
-      "state": "CA",
-      "latitude": 37.4223895,
-      "longitude": -122.0843123
+      "shopName": "Store_GA2",
+      "number": 101,
+      "zipCode": 3039,
+      "address": "2300 Windy Ridge Pkwy SE",
+      "state": "GA",
+      "latitude": 33.9059944,
+      "longitude": -84.460171
     }
   }
 ]
@@ -39,28 +41,34 @@ Desc This api add the shop into the list of the shops and override with new valu
 
 Request
  {
-    "shopName": "Store_CA",
-    "shopAddress": {
-      "number": 200,
-      "zipCode": 90001,
-      "address": "1600 Amphitheatre Pkwy Mountain View",
-      "state": "CA",
-      "latitude": 0,
-      "longitude": 0
-    }
+  "shopName": "Store_GA1",
+  "shopAddress": {
+  	"shopName": "Store_GA1",
+    "number": 101,
+    "zipCode": 90001,
+    "address": "1600 Amphitheatre Pkwy Mountain View",
+    "state": "GA",
+    "latitude": 0,
+    "longitude": 0
   }
+}
   
 Response
 {
-  "shopName": "Store_CA",
-  "shopAddress": {
-    "number": 200,
-    "zipCode": 90001,
-    "address": "1600 Amphitheatre Pkwy Mountain View",
-    "state": "CA",
-    "latitude": 37.4223895,
-    "longitude": -122.0843123
-  }
+  "message": "Shop added succesfully",
+  "data": {
+    "shopName": "Store_GA1",
+    "shopAddress": {
+      "shopName": "Store_GA1",
+      "number": 101,
+      "zipCode": 90001,
+      "address": "1600 Amphitheatre Pkwy Mountain View",
+      "state": "GA",
+      "latitude": 37.4223895,
+      "longitude": -122.0843123
+    }
+  },
+  "error": null
 }
 	 
 
@@ -71,15 +79,20 @@ Desc This api fetch the shop based on the shop name which is unique for every sh
 
 Response
 {
-  "shopName": "Store_GA",
-  "shopAddress": {
-    "number": 101,
-    "zipCode": 30339,
-    "address": "2300 Windy Ridge Pkwy SE",
-    "state": "GA",
-    "latitude": 0,
-    "longitude": 0
-  }
+  "message": "Shop found successfully",
+  "data": {
+    "shopName": "Store_GA1",
+    "shopAddress": {
+      "shopName": "Store_GA1",
+      "number": 101,
+      "zipCode": 90001,
+      "address": "1600 Amphitheatre Pkwy Mountain View",
+      "state": "GA",
+      "latitude": 37.4223895,
+      "longitude": -122.0843123
+    }
+  },
+  "error": null
 }
 
 Method GET
@@ -89,10 +102,15 @@ Desc This api provides the  nearest shop address based on the longitude and lati
 
 Response
 {
-  "number": 200,
-  "zipCode": 90001,
-  "address": "1600 Amphitheatre Pkwy Mountain View",
-  "state": "CA",
-  "latitude": 37.4223895,
-  "longitude": -122.0843123
+  "message": "Nearest location is found",
+  "data": {
+    "shopName": "Store_GA1",
+    "number": 101,
+    "zipCode": 90001,
+    "address": "1600 Amphitheatre Pkwy Mountain View",
+    "state": "GA",
+    "latitude": 37.4223895,
+    "longitude": -122.0843123
+  },
+  "error": null
 }
